@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { X, ChevronLeft, ChevronRight, ArrowUp } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, ArrowUp, Play, Pause } from 'lucide-react'
 
 const imageModules = import.meta.glob('../../public/gallery/*.webp', {
   eager: true,
@@ -33,6 +33,14 @@ function Lightbox({
   onPrev: () => void
   onNext: () => void
 }) {
+  const [playing, setPlaying] = useState(false)
+
+  useEffect(() => {
+    if (!playing) return
+    const id = setInterval(onNext, 2500)
+    return () => clearInterval(id)
+  }, [playing, onNext])
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -93,8 +101,18 @@ function Lightbox({
         draggable={false}
       />
 
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-4 py-1.5 font-mono text-sm text-white/70">
-        {selectedIndex + 1} / {images.length}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 rounded-full bg-white/10 px-4 py-1.5 font-mono text-sm text-white/70">
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            setPlaying(!playing)
+          }}
+          className="text-white/70 hover:text-white transition-colors"
+          aria-label={playing ? 'Pausar' : 'Reproducir'}
+        >
+          {playing ? <Pause size={16} /> : <Play size={16} />}
+        </button>
+        <span>{selectedIndex + 1} / {images.length}</span>
       </div>
     </div>
   )
