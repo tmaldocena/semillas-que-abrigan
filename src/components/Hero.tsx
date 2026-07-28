@@ -2,7 +2,7 @@ import Header from './Header'
 
 export default function Hero() {
   return (
-    <section className="relative h-screen min-h-[640px] w-full overflow-hidden rounded-b-[32px]">
+    <section className="relative h-[55vh] min-h-[420px] sm:h-screen sm:min-h-[640px] w-full overflow-hidden rounded-b-[32px]">
       {/* Fondo de video — placeholder: reemplazar /public/hero-video.mp4 por el video real */}
       <video
         className="absolute inset-0 h-full w-full object-cover object-[center_30%] sm:object-center"
