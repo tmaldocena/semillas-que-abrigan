@@ -3,9 +3,7 @@ const NAV_LINKS = ['Inicio', 'Galería']
 export default function Header() {
   return (
     <header className="relative z-20 flex items-center justify-between px-6 pt-6 sm:px-10 sm:pt-8 lg:px-14 lg:pt-10">
-      <span className="font-grotesk text-base uppercase tracking-wide text-dark">
-        Semillas.
-      </span>
+      <img src="/icon.svg" alt="Semillas" className="h-8 w-auto lg:h-10" />
 
       <nav className="liquid-glass hidden rounded-[28px] px-[52px] py-[24px] lg:block">
         <ul className="flex items-center gap-10">

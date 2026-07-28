@@ -1,29 +1,11 @@
-import { Mail, Instagram } from 'lucide-react'
 import Header from './Header'
-
-const SOCIALS = [
-  { icon: Mail, label: 'Escribir por mail', href: 'mailto:contacto@ejemplo.com' },
-  { icon: Instagram, label: 'Ver en Instagram', href: '#' },
-]
-
-function SocialButton({ icon: Icon, label, href }: (typeof SOCIALS)[number]) {
-  return (
-    <a
-      href={href}
-      aria-label={label}
-      className="liquid-glass flex h-14 w-14 items-center justify-center rounded-[1rem] text-dark transition-colors hover:bg-dark/5"
-    >
-      <Icon size={20} strokeWidth={1.75} />
-    </a>
-  )
-}
 
 export default function Hero() {
   return (
     <section className="relative h-screen min-h-[640px] w-full overflow-hidden rounded-b-[32px]">
       {/* Fondo de video — placeholder: reemplazar /public/hero-video.mp4 por el video real */}
       <video
-        className="absolute inset-0 h-full w-full object-cover"
+        className="absolute inset-0 h-full w-full object-cover object-[center_30%] sm:object-center"
         src="/hero-video.mp4"
         autoPlay
         loop
@@ -58,12 +40,6 @@ export default function Hero() {
           </a>
         </div>
 
-        {/* Íconos sociales — mobile, centrados debajo */}
-        <div className="flex justify-center gap-3 pb-8 lg:hidden">
-          {SOCIALS.map((s) => (
-            <SocialButton key={s.label} {...s} />
-          ))}
-        </div>
       </div>
     </section>
   )
