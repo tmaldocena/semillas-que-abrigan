@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Mouldy Cheese';
+  src: url('/fonts/MouldyCheeseRegular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #f7dfbc;
+  color: #232024;
+  font-family: 'Quicksand', sans-serif;
+}
+
+/* ---------------------------------------------------------------
+   Liquid glass — recalibrado para fondo claro (navbar, íconos, tags)
+   --------------------------------------------------------------- */
+.liquid-glass {
+  background: rgba(247, 223, 188, 0.45);
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: none;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(
+    180deg,
+    rgba(35, 32, 36, 0.28) 0%,
+    rgba(35, 32, 36, 0.08) 20%,
+    rgba(35, 32, 36, 0) 40%,
+    rgba(35, 32, 36, 0) 60%,
+    rgba(35, 32, 36, 0.08) 80%,
+    rgba(35, 32, 36, 0.28) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------
+   "Costura" — elemento de firma: cada bolsita/card de la galería
+   tiene un borde punteado (puntada) y una leve inclinación a mano,
+   como si estuviera cosida a mano en lugar de alineada por grilla.
+   Al hover, se "endereza": simula que alguien la levanta para mirarla.
+   --------------------------------------------------------------- */
+.stitch-card {
+  border: 2px dashed rgba(35, 32, 36, 0.32);
+  transition: transform 0.35s ease, border-color 0.35s ease;
+}
+.stitch-card:hover {
+  transform: rotate(0deg) translateY(-4px);
+  border-color: rgba(139, 74, 29, 0.55);
+}
+.stitch-knot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: rgba(35, 32, 36, 0.32);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
