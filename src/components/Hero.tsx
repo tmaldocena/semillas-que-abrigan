@@ -18,16 +18,16 @@ export default function Hero() {
 
         {/* Título abajo-izquierda / botón abajo-derecha, directo sobre el video.
             El halo de texto reemplaza al panel: da contraste sin tapar la escena. */}
-        <div className="flex flex-1 flex-col items-center justify-end gap-6 pb-8 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:pb-12 lg:pb-16">
+        <div className="flex flex-1 flex-col items-center justify-end gap-4 pb-6 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:pb-12 lg:pb-16">
           <div className="animate-fade-up max-w-[320px] text-center sm:max-w-[420px] sm:text-left lg:max-w-[520px]">
-            <h1 className="font-grotesk text-[30px] uppercase leading-[1.1] text-dark [text-shadow:0_2px_18px_rgba(247,223,188,0.9),0_1px_4px_rgba(247,223,188,0.95)] sm:text-[38px] md:text-[46px] lg:text-[56px]">
+            <h1 className="font-grotesk text-[22px] uppercase leading-[1.1] text-dark [text-shadow:0_2px_18px_rgba(247,223,188,0.9),0_1px_4px_rgba(247,223,188,0.95)] sm:text-[38px] md:text-[46px] lg:text-[56px]">
               Semillas que
               <br />
               abrigan, bolsitas
               <br />
               que abrazan
             </h1>
-            <p className="mx-auto mt-3 max-w-[280px] font-mono font-bold text-[18px] text-dark/85 sm:mx-0 sm:max-w-none sm:text-[15px]">
+            <p className="mx-auto mt-2 max-w-[200px] font-mono font-bold text-[13px] text-dark/85 sm:mx-0 sm:max-w-none sm:text-[15px]">
               Cada semilla, guardada con cariño en su bolsita.
             </p>
           </div>
