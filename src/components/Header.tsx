@@ -65,24 +65,26 @@ export default function Header() {
       </div>
 
       {open && (
-        <div className="liquid-glass absolute left-4 right-4 top-full z-30 mt-3 rounded-[24px] p-4 lg:hidden">
-          <ul className="flex flex-col items-stretch gap-2">
-            {NAV_LINKS.map((link) => (
-              <li key={link.label}>
-                <Link
-                  to={link.to}
-                  onClick={() => setOpen(false)}
-                  className={
-                    link.highlight
-                      ? 'flex items-center justify-center rounded-full bg-rust px-4 py-3 font-mono text-[13px] font-semibold uppercase tracking-wide text-background transition-colors hover:bg-sage'
-                      : 'flex items-center justify-center rounded-full px-4 py-3 font-grotesk text-[14px] uppercase tracking-wide text-dark transition-colors hover:bg-rust/10'
-                  }
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <div className="absolute left-4 right-4 top-full z-30 mt-3 lg:hidden">
+          <div className="liquid-glass rounded-[24px] p-4">
+            <ul className="flex flex-col items-stretch gap-2">
+              {NAV_LINKS.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    to={link.to}
+                    onClick={() => setOpen(false)}
+                    className={
+                      link.highlight
+                        ? 'flex items-center justify-center rounded-full bg-rust px-4 py-3 font-mono text-[13px] font-semibold uppercase tracking-wide text-background transition-colors hover:bg-sage'
+                        : 'flex items-center justify-center rounded-full px-4 py-3 font-grotesk text-[14px] uppercase tracking-wide text-dark transition-colors hover:bg-rust/10'
+                    }
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
     </header>
