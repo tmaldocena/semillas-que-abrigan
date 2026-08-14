@@ -1,13 +1,18 @@
-import Hero from './components/Hero'
-import Gallery from './components/Gallery'
-import Footer from './components/Footer'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Home from './pages/Home'
+import Survey from './pages/Survey'
+import ScrollToTop from './components/ScrollToTop'
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-background">
-      <Hero />
-      <Gallery />
-      <Footer />
-    </div>
+    <BrowserRouter>
+      <ScrollToTop />
+      <div className="min-h-screen bg-background">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/encuesta" element={<Survey />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
   )
 }
