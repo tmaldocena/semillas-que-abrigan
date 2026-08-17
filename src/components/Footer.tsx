@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 export default function Footer() {
   return (
     <footer className="rounded-t-[32px] bg-dark px-6 py-14 text-background sm:px-10 lg:px-14">
@@ -13,6 +15,40 @@ export default function Footer() {
             Docentes: Karina Aguilera y Lorena Vázquez
           </p>
         </div>
+
+        {/* Enlaces de navegación rápida */}
+        <nav className="my-2">
+          <ul className="flex flex-wrap items-center justify-center gap-6 font-grotesk text-xs uppercase tracking-wider text-background/70">
+            <li>
+              <Link to="/" className="transition-colors hover:text-rust">
+                Inicio
+              </Link>
+            </li>
+            <li>
+              <Link to="/proceso" className="transition-colors hover:text-rust">
+                Proceso
+              </Link>
+            </li>
+            <li>
+              <Link to="/resultados" className="transition-colors hover:text-rust">
+                Resultados
+              </Link>
+            </li>
+            <li>
+              <Link to="/galeria" className="transition-colors hover:text-rust">
+                Galería
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/encuesta"
+                className="rounded-full bg-rust/30 px-3.5 py-1 text-background font-semibold transition-colors hover:bg-rust"
+              >
+                Encuesta
+              </Link>
+            </li>
+          </ul>
+        </nav>
 
         <div className="h-px w-24 bg-rust/40" aria-hidden="true" />
 

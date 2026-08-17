@@ -1,4 +1,6 @@
+import { Link } from 'react-router-dom'
 import Header from './Header'
+import { ChevronDown } from 'lucide-react'
 
 export default function Hero() {
   return (
@@ -15,9 +17,7 @@ export default function Hero() {
       <div className="relative z-10 mx-auto flex h-full max-w-content flex-col px-6 sm:px-10 lg:px-14">
         <Header />
 
-
-        {/* Título abajo-izquierda / botón abajo-derecha, directo sobre el video.
-            El halo de texto reemplaza al panel: da contraste sin tapar la escena. */}
+        {/* Título abajo-izquierda / botón abajo-derecha */}
         <div className="flex flex-1 flex-col items-center justify-end gap-4 pb-6 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:pb-12 lg:pb-16">
           <div className="animate-fade-up max-w-[320px] text-center sm:max-w-[420px] sm:text-left lg:max-w-[520px]">
             <h1 className="font-grotesk text-[22px] uppercase leading-[1.1] text-dark [text-shadow:0_2px_18px_rgba(247,223,188,0.9),0_1px_4px_rgba(247,223,188,0.95)] sm:text-[38px] md:text-[46px] lg:text-[56px]">
@@ -32,14 +32,21 @@ export default function Hero() {
             </p>
           </div>
 
-          <a
-            href="#galeria"
-            className="animate-fade-up inline-flex shrink-0 items-center rounded-full bg-rust px-7 py-3 font-mono text-sm font-semibold uppercase tracking-wide text-background shadow-lg shadow-dark/10 transition-colors hover:bg-sage"
+          <Link
+            to="/proceso"
+            className="group animate-fade-up inline-flex shrink-0 items-center gap-2 rounded-full bg-rust px-7 py-3 font-mono text-sm font-semibold uppercase tracking-wide text-background shadow-lg shadow-dark/10 transition-all hover:bg-sage hover:shadow-xl hover:-translate-y-0.5"
           >
-            Ver la galería
-          </a>
+            Conocé el proceso
+          </Link>
         </div>
 
+        {/* Indicador de scroll rebote suave */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 hidden sm:flex flex-col items-center gap-1 opacity-70 transition-opacity hover:opacity-100">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-dark font-bold">
+            Scroll
+          </span>
+          <ChevronDown size={18} className="animate-soft-bounce text-dark" />
+        </div>
       </div>
     </section>
   )
