@@ -1,5 +1,15 @@
-import { useState, useEffect, useCallback } from 'react'
-import { X, ChevronLeft, ChevronRight, ArrowUp, Play, Pause } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import {
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUp,
+  Play,
+  Pause,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+} from 'lucide-react'
 
 const imageModules = import.meta.glob('../../public/gallery/*.webp', {
   eager: true,
@@ -11,6 +21,21 @@ const images: string[] = Object.entries(imageModules)
   .sort(([a], [b]) => a.localeCompare(b))
   .map(([, url]) => url as string)
 
+// Thumbnails livianos generados con scripts/generate-gallery-thumbs.mjs
+// (public/gallery-thumb/*.webp). Si todavía no corriste el script, cae
+// de vuelta a las imágenes originales para no romper nada.
+const thumbModules = import.meta.glob('../../public/gallery-thumb/*.webp', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+})
+
+const thumbImages: string[] = Object.entries(thumbModules)
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([, url]) => url as string)
+
+const stageImages = thumbImages.length === images.length ? thumbImages : images
+
 const ROTATIONS = [
   '-rotate-[1.2deg]',
   'rotate-[0.8deg]',
@@ -19,6 +44,36 @@ const ROTATIONS = [
   'rotate-[0.5deg]',
   '-rotate-[1deg]',
 ]
+
+// ---- deterministic scatter layout for the explorable stage ----
+function seededRandom(i: number) {
+  const x = Math.sin(i * 12.9898) * 43758.5453
+  return x - Math.floor(x)
+}
+
+const CARD_SIZE = 230
+const CANVAS_PADDING = 140
+// si una card se ve en pantalla más chica que esto (px), no tiene sentido
+// pagar el costo de red por ella todavía — el usuario no distingue el detalle
+const MIN_RENDER_PX = 64
+// margen extra alrededor del viewport visible para precargar antes de que
+// la card entre en pantalla, sin llegar a cargar todo el canvas
+const VIEWPORT_BUFFER = 260
+const GRID_COLS = Math.max(4, Math.round(Math.sqrt(images.length * 1.5)))
+const GRID_ROWS = Math.ceil(images.length / GRID_COLS) || 1
+const CANVAS_WIDTH = GRID_COLS * CARD_SIZE + CANVAS_PADDING * 2
+const CANVAS_HEIGHT = GRID_ROWS * CARD_SIZE + CANVAS_PADDING * 2
+
+const positions = images.map((_, i) => {
+  const col = i % GRID_COLS
+  const row = Math.floor(i / GRID_COLS)
+  const jitterX = (seededRandom(i) - 0.5) * CARD_SIZE * 0.6
+  const jitterY = (seededRandom(i + 500) - 0.5) * CARD_SIZE * 0.6
+  return {
+    x: col * CARD_SIZE + jitterX + CANVAS_PADDING,
+    y: row * CARD_SIZE + jitterY + CANVAS_PADDING,
+  }
+})
 
 function Lightbox({
   images,
@@ -118,9 +173,236 @@ function Lightbox({
   )
 }
 
+// ---- explorable pan/zoom stage (desktop & tablet) ----
+function GalleryStage({ onSelect }: { onSelect: (i: number) => void }) {
+  const viewportRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLDivElement>(null)
+  const view = useRef({ tx: 0, ty: 0, scale: 1 })
+  const drag = useRef({
+    active: false,
+    moved: false,
+    startX: 0,
+    startY: 0,
+    startTx: 0,
+    startTy: 0,
+  })
+
+  const [visible, setVisible] = useState<Set<number>>(new Set())
+  const lastVisUpdate = useRef(0)
+  const wheelSettleTimeout = useRef<number>()
+
+  const applyTransform = () => {
+    if (canvasRef.current) {
+      canvasRef.current.style.transform = `translate(${view.current.tx}px, ${view.current.ty}px) scale(${view.current.scale})`
+    }
+  }
+
+  // Decide qué cards realmente montan una <img>: tiene que estar dentro
+  // del viewport (+ buffer) Y verse suficientemente grande como para que
+  // valga la pena pagar la descarga.
+  const computeVisible = useCallback(() => {
+    const vp = viewportRef.current
+    if (!vp) return
+    const { tx, ty, scale } = view.current
+    const onScreenSize = CARD_SIZE * scale
+
+    if (onScreenSize < MIN_RENDER_PX) {
+      setVisible(new Set())
+      return
+    }
+
+    const vw = vp.clientWidth
+    const vh = vp.clientHeight
+    const left = -tx / scale - VIEWPORT_BUFFER
+    const top = -ty / scale - VIEWPORT_BUFFER
+    const right = (-tx + vw) / scale + VIEWPORT_BUFFER
+    const bottom = (-ty + vh) / scale + VIEWPORT_BUFFER
+
+    const next = new Set<number>()
+    positions.forEach((p, i) => {
+      if (p.x + CARD_SIZE >= left && p.x <= right && p.y + CARD_SIZE >= top && p.y <= bottom) {
+        next.add(i)
+      }
+    })
+    setVisible(next)
+  }, [])
+
+  const fitToView = useCallback(() => {
+    const vp = viewportRef.current
+    if (!vp) return
+    const vw = vp.clientWidth
+    const vh = vp.clientHeight
+    const fitScale = Math.min(vw / CANVAS_WIDTH, vh / CANVAS_HEIGHT) * 0.92
+    view.current.scale = fitScale
+    view.current.tx = (vw - CANVAS_WIDTH * fitScale) / 2
+    view.current.ty = (vh - CANVAS_HEIGHT * fitScale) / 2
+    applyTransform()
+    computeVisible()
+  }, [computeVisible])
+
+  useEffect(() => {
+    fitToView()
+    window.addEventListener('resize', fitToView)
+    return () => window.removeEventListener('resize', fitToView)
+  }, [fitToView])
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    drag.current = {
+      active: true,
+      moved: false,
+      startX: e.clientX,
+      startY: e.clientY,
+      startTx: view.current.tx,
+      startTy: view.current.ty,
+    }
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+  }
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!drag.current.active) return
+    const dx = e.clientX - drag.current.startX
+    const dy = e.clientY - drag.current.startY
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) drag.current.moved = true
+    view.current.tx = drag.current.startTx + dx
+    view.current.ty = drag.current.startTy + dy
+    applyTransform()
+
+    // no recalculamos visibilidad en cada pixel de drag, solo cada ~120ms
+    const now = performance.now()
+    if (now - lastVisUpdate.current > 120) {
+      lastVisUpdate.current = now
+      computeVisible()
+    }
+  }
+
+  const onPointerUp = () => {
+    drag.current.active = false
+    computeVisible()
+  }
+
+  // React registra los listeners de wheel como "passive" por defecto desde
+  // la v17, así que un preventDefault() puesto en un prop onWheel se ignora
+  // y la página igual scrollea. Lo enganchamos como listener nativo con
+  // { passive: false } para poder frenar el scroll de verdad.
+  useEffect(() => {
+    const vp = viewportRef.current
+    if (!vp) return
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const rect = vp.getBoundingClientRect()
+      const mx = e.clientX - rect.left
+      const my = e.clientY - rect.top
+      const prevScale = view.current.scale
+      const delta = -e.deltaY * 0.0012
+      const nextScale = Math.min(2, Math.max(0.25, prevScale + delta * prevScale))
+      view.current.tx = mx - ((mx - view.current.tx) / prevScale) * nextScale
+      view.current.ty = my - ((my - view.current.ty) / prevScale) * nextScale
+      view.current.scale = nextScale
+      applyTransform()
+
+      // el wheel dispara muchos eventos seguidos: esperamos a que se calme
+      window.clearTimeout(wheelSettleTimeout.current)
+      wheelSettleTimeout.current = window.setTimeout(computeVisible, 120)
+    }
+
+    vp.addEventListener('wheel', handleWheel, { passive: false })
+    return () => vp.removeEventListener('wheel', handleWheel)
+  }, [computeVisible])
+
+  const zoomBy = (factor: number) => {
+    const vp = viewportRef.current
+    if (!vp) return
+    const vw = vp.clientWidth / 2
+    const vh = vp.clientHeight / 2
+    const prevScale = view.current.scale
+    const nextScale = Math.min(2, Math.max(0.25, prevScale * factor))
+    view.current.tx = vw - ((vw - view.current.tx) / prevScale) * nextScale
+    view.current.ty = vh - ((vh - view.current.ty) / prevScale) * nextScale
+    view.current.scale = nextScale
+    applyTransform()
+    computeVisible()
+  }
+
+  return (
+    <div className="relative h-[520px] w-full overflow-hidden rounded-[32px] border border-dark/10 bg-tan/20 sm:h-[600px] lg:h-[680px]">
+      <div
+        ref={viewportRef}
+        className="absolute inset-0 touch-none cursor-grab active:cursor-grabbing"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerLeave={onPointerUp}
+      >
+        <div
+          ref={canvasRef}
+          className="absolute left-0 top-0 origin-top-left"
+          style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}
+        >
+          {images.map((_, i) => {
+            const isVisible = visible.has(i)
+            return (
+              <button
+                key={images[i]}
+                onClick={() => {
+                  if (!drag.current.moved) onSelect(i)
+                }}
+                className={`stitch-card group absolute cursor-pointer overflow-hidden rounded-[20px] bg-transparent p-[12px] ${ROTATIONS[i % ROTATIONS.length]}`}
+                style={{ left: positions[i].x, top: positions[i].y, width: CARD_SIZE - 40 }}
+              >
+                <div className="relative aspect-square w-full overflow-hidden rounded-[13px] bg-tan/50">
+                  {isVisible && (
+                    <img
+                      src={stageImages[i]}
+                      loading="lazy"
+                      decoding="async"
+                      alt={`Foto del proyecto ${i + 1}`}
+                      className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      draggable={false}
+                    />
+                  )}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="absolute bottom-4 left-4 z-10 flex gap-2">
+        <button
+          onClick={() => zoomBy(0.8)}
+          aria-label="Alejar"
+          className="rounded-full bg-dark/80 p-2.5 text-background shadow-lg backdrop-blur-sm transition-transform hover:scale-110"
+        >
+          <ZoomOut size={16} />
+        </button>
+        <button
+          onClick={() => zoomBy(1.25)}
+          aria-label="Acercar"
+          className="rounded-full bg-dark/80 p-2.5 text-background shadow-lg backdrop-blur-sm transition-transform hover:scale-110"
+        >
+          <ZoomIn size={16} />
+        </button>
+        <button
+          onClick={fitToView}
+          aria-label="Ver todo"
+          className="rounded-full bg-dark/80 p-2.5 text-background shadow-lg backdrop-blur-sm transition-transform hover:scale-110"
+        >
+          <Maximize2 size={16} />
+        </button>
+      </div>
+
+      <div className="absolute bottom-4 right-4 z-10 rounded-full bg-dark/80 px-3 py-1.5 font-mono text-xs text-background">
+        {images.length} fotos · arrastrá para explorar
+      </div>
+    </div>
+  )
+}
+
 export default function Gallery() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [showScrollTop, setShowScrollTop] = useState(false)
+  const [isCompact, setIsCompact] = useState(false)
 
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 400)
@@ -128,16 +410,20 @@ export default function Gallery() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)')
+    const update = () => setIsCompact(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
+
   const close = useCallback(() => setSelectedIndex(null), [])
   const prev = useCallback(() => {
-    setSelectedIndex((i) =>
-      i !== null ? (i - 1 + images.length) % images.length : null,
-    )
+    setSelectedIndex((i) => (i !== null ? (i - 1 + images.length) % images.length : null))
   }, [])
   const next = useCallback(() => {
-    setSelectedIndex((i) =>
-      i !== null ? (i + 1) % images.length : null,
-    )
+    setSelectedIndex((i) => (i !== null ? (i + 1) % images.length : null))
   }, [])
 
   return (
@@ -156,24 +442,28 @@ export default function Gallery() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {images.map((src, i) => (
-          <button
-            key={src}
-            onClick={() => setSelectedIndex(i)}
-            className={`stitch-card group relative overflow-hidden rounded-[24px] p-[18px] bg-transparent cursor-pointer ${ROTATIONS[i % ROTATIONS.length]}`}
-          >
-            <div className="relative overflow-hidden rounded-[16px] bg-tan/50">
-              <img
-                src={src}
-                loading="lazy"
-                alt={`Foto del proyecto ${i + 1}`}
-                className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-            </div>
-          </button>
-        ))}
-      </div>
+      {isCompact ? (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {images.map((src, i) => (
+            <button
+              key={src}
+              onClick={() => setSelectedIndex(i)}
+              className={`stitch-card group relative overflow-hidden rounded-[24px] bg-transparent p-[18px] cursor-pointer ${ROTATIONS[i % ROTATIONS.length]}`}
+            >
+              <div className="relative overflow-hidden rounded-[16px] bg-tan/50">
+                <img
+                  src={src}
+                  loading="lazy"
+                  alt={`Foto del proyecto ${i + 1}`}
+                  className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              </div>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <GalleryStage onSelect={setSelectedIndex} />
+      )}
 
       {selectedIndex !== null && (
         <Lightbox
