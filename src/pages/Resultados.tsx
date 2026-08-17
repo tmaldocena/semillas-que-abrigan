@@ -39,14 +39,6 @@ export default function Resultados() {
             <Download size={18} />
             Descargar Informe Pedagógico (PDF)
           </a>
-
-          <button
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-2.5 rounded-full border border-background/40 bg-background/10 px-6 py-3.5 font-mono text-xs font-bold uppercase tracking-wider text-background backdrop-blur-md transition-all hover:bg-background hover:text-dark"
-          >
-            <Printer size={18} />
-            Imprimir informe
-          </button>
         </div>
       </PageHero>
 
