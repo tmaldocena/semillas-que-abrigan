@@ -261,7 +261,11 @@ function GalleryStage({ onSelect }: { onSelect: (i: number) => void }) {
     if (!vp) return
     const vw = vp.clientWidth
     const vh = vp.clientHeight
-    const fitScale = Math.min(vw / CANVAS_WIDTH, vh / CANVAS_HEIGHT) * 0.92
+    const fitAllScale = Math.min(vw / CANVAS_WIDTH, vh / CANVAS_HEIGHT) * 0.92
+    // nunca arrancar con un zoom tan chico que las cards queden por debajo
+    // de MIN_RENDER_PX (eso es lo que las mostraba "transparentes")
+    const minLegibleScale = MIN_RENDER_PX / CARD_SIZE
+    const fitScale = Math.max(fitAllScale, minLegibleScale)
     view.current.scale = fitScale
     view.current.tx = (vw - CANVAS_WIDTH * fitScale) / 2
     view.current.ty = (vh - CANVAS_HEIGHT * fitScale) / 2
@@ -319,7 +323,7 @@ function GalleryStage({ onSelect }: { onSelect: (i: number) => void }) {
   const onPointerDown = (e: React.PointerEvent) => {
     const vp = viewportRef.current
     if (!vp) return
-      ; (e.target as HTMLElement).setPointerCapture(e.pointerId)
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
 
     if (pointers.current.size >= 2) {
@@ -541,7 +545,7 @@ function GalleryStage({ onSelect }: { onSelect: (i: number) => void }) {
         )}
       </div>
 
-      <div className="absolute hidden md:block bottom-4 right-4 z-10 rounded-full bg-dark/80 px-3 py-1.5 font-mono text-xs text-background">
+      <div className="absolute bottom-4 right-4 z-10 rounded-full bg-dark/80 px-3 py-1.5 font-mono text-xs text-background">
         {images.length} fotos · arrastrá / pellizcá para explorar
       </div>
 
