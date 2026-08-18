@@ -323,7 +323,7 @@ function GalleryStage({ onSelect }: { onSelect: (i: number) => void }) {
   const onPointerDown = (e: React.PointerEvent) => {
     const vp = viewportRef.current
     if (!vp) return
-    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+      ; (e.target as HTMLElement).setPointerCapture(e.pointerId)
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
 
     if (pointers.current.size >= 2) {
@@ -545,7 +545,7 @@ function GalleryStage({ onSelect }: { onSelect: (i: number) => void }) {
         )}
       </div>
 
-      <div className="absolute bottom-4 right-4 z-10 rounded-full bg-dark/80 px-3 py-1.5 font-mono text-xs text-background">
+      <div className="absolute hidden md:block bottom-4 right-4 z-10 rounded-full bg-dark/80 px-3 py-1.5 font-mono text-xs text-background">
         {images.length} fotos · arrastrá / pellizcá para explorar
       </div>
 
@@ -602,6 +602,9 @@ export default function Gallery() {
         </h2>
         <p className="max-w-[320px] font-mono text-sm text-dark/70 sm:text-base">
           Un registro de lo que fuimos armando en Sala Amarilla, paso a paso.
+        </p>
+        <p className="max-w-[320px] font-mono text-sm text-dark/70 sm:text-base">
+          Click en <Maximize2 size={16} /> para ver en pantalla completa y arrastrá / pellizcá para explorar.
         </p>
       </div>
 
