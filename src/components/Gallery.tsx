@@ -10,6 +10,7 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
+  Expand,
 } from 'lucide-react'
 
 const imageModules = import.meta.glob('../../public/gallery/*.webp', {
@@ -196,6 +197,7 @@ function GalleryStage({ onSelect }: { onSelect: (i: number) => void }) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
   const view = useRef({ tx: 0, ty: 0, scale: 1 })
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const drag = useRef({
     active: false,
     moved: false,
@@ -272,6 +274,27 @@ function GalleryStage({ onSelect }: { onSelect: (i: number) => void }) {
     window.addEventListener('resize', fitToView)
     return () => window.removeEventListener('resize', fitToView)
   }, [fitToView])
+
+  // al entrar/salir de fullscreen el contenedor cambia de tamaño real
+  // (no dispara 'resize' de window), así que reencajamos a mano
+  useEffect(() => {
+    const id = requestAnimationFrame(fitToView)
+    return () => cancelAnimationFrame(id)
+  }, [isFullscreen, fitToView])
+
+  useEffect(() => {
+    if (!isFullscreen) return
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsFullscreen(false)
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => {
+      document.body.style.overflow = prevOverflow
+      window.removeEventListener('keydown', handleKey)
+    }
+  }, [isFullscreen])
 
   const beginPinch = (vp: HTMLDivElement) => {
     const pts = [...pointers.current.values()]
@@ -435,8 +458,14 @@ function GalleryStage({ onSelect }: { onSelect: (i: number) => void }) {
     computeVisible()
   }
 
-  return (
-    <div className="relative h-[420px] w-full overflow-hidden rounded-[32px] border border-dark/10 bg-tan/20 sm:h-[520px] lg:h-[680px]">
+  const stageMarkup = (
+    <div
+      className={
+        isFullscreen
+          ? 'fixed inset-0 z-40 overflow-hidden bg-tan/95'
+          : 'relative h-[420px] w-full overflow-hidden rounded-[32px] border border-dark/10 bg-tan/20 sm:h-[520px] lg:h-[680px]'
+      }
+    >
       <div
         ref={viewportRef}
         className="absolute inset-0 touch-none cursor-grab active:cursor-grabbing"
@@ -501,13 +530,41 @@ function GalleryStage({ onSelect }: { onSelect: (i: number) => void }) {
         >
           <Maximize2 size={16} />
         </button>
+        {!isFullscreen && (
+          <button
+            onClick={() => setIsFullscreen(true)}
+            aria-label="Pantalla completa"
+            className="rounded-full bg-dark/80 p-2.5 text-background shadow-lg backdrop-blur-sm transition-transform hover:scale-110"
+          >
+            <Expand size={16} />
+          </button>
+        )}
       </div>
 
       <div className="absolute bottom-4 right-4 z-10 rounded-full bg-dark/80 px-3 py-1.5 font-mono text-xs text-background">
         {images.length} fotos · arrastrá / pellizcá para explorar
       </div>
+
+      {isFullscreen && (
+        <button
+          onClick={() => setIsFullscreen(false)}
+          aria-label="Salir de pantalla completa"
+          className="absolute z-10 rounded-full bg-dark/80 p-2.5 text-background shadow-lg backdrop-blur-sm transition-transform hover:scale-110"
+          style={{
+            top: 'max(1rem, env(safe-area-inset-top))',
+            right: 'max(1rem, env(safe-area-inset-right))',
+          }}
+        >
+          <X size={18} />
+        </button>
+      )}
     </div>
   )
+
+  if (isFullscreen) {
+    return createPortal(stageMarkup, document.body)
+  }
+  return stageMarkup
 }
 
 export default function Gallery() {
