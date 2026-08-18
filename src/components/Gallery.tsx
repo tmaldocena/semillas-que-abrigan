@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import {
   X,
   ChevronLeft,
@@ -113,14 +114,25 @@ function Lightbox({
     }
   }, [])
 
-  return (
+  // Portal a document.body: así el `fixed` queda garantizado contra el
+  // viewport real, sin importar si algún ancestro (p.ej. un wrapper de
+  // Framer Motion con transform) crea un containing block propio.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  if (!mounted) return null
+
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-dark/80 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onClose}
     >
       <button
         onClick={onClose}
-        className="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
+        className="absolute z-10 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
+        style={{
+          top: 'max(1rem, env(safe-area-inset-top))',
+          right: 'max(1rem, env(safe-area-inset-right))',
+        }}
         aria-label="Cerrar"
       >
         <X size={24} />
@@ -131,7 +143,8 @@ function Lightbox({
           e.stopPropagation()
           onPrev()
         }}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-10 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 transition-colors"
+        className="absolute top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 transition-colors"
+        style={{ left: 'max(1rem, env(safe-area-inset-left))' }}
         aria-label="Foto anterior"
       >
         <ChevronLeft size={28} />
@@ -142,7 +155,8 @@ function Lightbox({
           e.stopPropagation()
           onNext()
         }}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-10 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 transition-colors"
+        className="absolute top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 transition-colors"
+        style={{ right: 'max(1rem, env(safe-area-inset-right))' }}
         aria-label="Foto siguiente"
       >
         <ChevronRight size={28} />
@@ -151,12 +165,15 @@ function Lightbox({
       <img
         src={images[selectedIndex]}
         alt={`Foto del proyecto ${selectedIndex + 1}`}
-        className="max-h-[85vh] max-w-[90vw] rounded-[16px] object-contain select-none"
+        className="max-h-[80vh] max-w-[85vw] rounded-[16px] object-contain select-none"
         onClick={(e) => e.stopPropagation()}
         draggable={false}
       />
 
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 rounded-full bg-white/10 px-4 py-1.5 font-mono text-sm text-white/70">
+      <div
+        className="absolute left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-full bg-white/10 px-4 py-1.5 font-mono text-sm text-white/70"
+        style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+      >
         <button
           onClick={(e) => {
             e.stopPropagation()
@@ -169,7 +186,8 @@ function Lightbox({
         </button>
         <span>{selectedIndex + 1} / {images.length}</span>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
