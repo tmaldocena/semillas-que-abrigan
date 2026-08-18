@@ -11,8 +11,7 @@ import {
   Building2,
   Sprout,
   ArrowRight,
-  Download,
-  Printer,
+  Download
 } from 'lucide-react'
 
 export default function Resultados() {

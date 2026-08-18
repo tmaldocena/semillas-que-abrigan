@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="mx-auto flex max-w-content flex-col items-center gap-6 text-center">
         <div className="space-y-1.5">
           <p className="font-grotesk text-lg uppercase tracking-wide text-background sm:text-xl">
-            Escuela N° Prov. de San Luis
+            Escuela N°70 Prov. de San Luis
           </p>
           <p className="font-mono text-sm text-background/70 sm:text-base">
             Jardín Creciendo — Sala Amarilla (5 años) — Turno Tarde
