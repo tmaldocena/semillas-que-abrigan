@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { X, ChevronLeft, ChevronRight, ArrowUp, Play, Pause } from 'lucide-react'
 
-const imageModules = import.meta.glob('../../public/gallery/*.webp', {
+const imageModules = import.meta.glob('../../public/continue-gallery/*.webp', {
   eager: true,
   query: '?url',
   import: 'default',
@@ -147,14 +147,15 @@ export default function Gallery() {
     >
       <div className="mb-10 flex flex-col gap-4 sm:mb-14 sm:flex-row sm:items-end sm:justify-between">
         <h2 className="font-grotesk text-[32px] uppercase leading-tight text-dark sm:text-[44px] lg:text-[56px]">
-          Galería del
+          Galería de la
           <br />
-          proyecto
+          Visita
         </h2>
         <p className="max-w-[320px] font-mono text-sm text-dark/70 sm:text-base">
-          Un registro de lo que fuimos armando en Sala Amarilla, paso a paso.
+          Acá te compartimos algunas fotos de los momentos que vivimos en la jornada de la visita al Hospital del Norte.
         </p>
       </div>
+      <p className='font-grotesk text-lg text-rust text-center sm:text-base mb-10'>Muchas gracias por recibirnos!!</p>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {images.map((src, i) => (

@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { label: 'Proceso', to: '/proceso' },
   { label: 'Resultados', to: '/resultados' },
   { label: 'Galería', to: '/galeria' },
+  { label: '¿Como seguimos?', to: '/continuacion' },
   { label: 'Encuesta', to: '/encuesta', highlight: true },
 ]
 
@@ -59,11 +60,10 @@ export default function Header() {
                 <li key={link.label}>
                   <Link
                     to={link.to}
-                    className={`font-grotesk text-[13px] uppercase tracking-wide transition-colors ${
-                      active
+                    className={`font-grotesk text-[13px] uppercase tracking-wide transition-colors ${active
                         ? 'text-rust font-bold underline underline-offset-4 decoration-2'
                         : 'text-dark hover:text-rust'
-                    }`}
+                      }`}
                   >
                     {link.label}
                   </Link>
@@ -111,11 +111,10 @@ export default function Header() {
                     <Link
                       to={link.to}
                       onClick={() => setOpen(false)}
-                      className={`flex items-center justify-center rounded-full px-4 py-3 font-grotesk text-[14px] uppercase tracking-wide transition-colors ${
-                        active
+                      className={`flex items-center justify-center rounded-full px-4 py-3 font-grotesk text-[14px] uppercase tracking-wide transition-colors ${active
                           ? 'bg-rust/20 text-rust font-bold'
                           : 'text-dark hover:bg-rust/10'
-                      }`}
+                        }`}
                     >
                       {link.label}
                     </Link>

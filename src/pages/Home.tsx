@@ -11,10 +11,21 @@ const imageModules = import.meta.glob('../../public/gallery/*.webp', {
   import: 'default',
 })
 
+const continuacionImageModules = import.meta.glob('../../public/continue-gallery/*.webp', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+})
+
 const previewImages: string[] = Object.entries(imageModules)
   .sort(([a], [b]) => a.localeCompare(b))
   .map(([, url]) => url as string)
   .slice(0, 3) // Solo 3 imágenes para el preview
+
+const continuacionImages: string[] = Object.entries(continuacionImageModules)
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([, url]) => url as string)
+  .slice(0, 3)
 
 const ROTATIONS = ['-rotate-[1.2deg]', 'rotate-[0.8deg]', 'rotate-[1.4deg]']
 
@@ -110,6 +121,56 @@ export default function Home() {
         <div className="mt-12 text-center sm:hidden">
           <Link
             to="/galeria"
+            className="inline-flex items-center gap-2 rounded-full bg-rust px-7 py-3 font-mono text-sm font-semibold uppercase tracking-wide text-background shadow-md transition-colors hover:bg-sage"
+          >
+            Ver galería completa
+            <ArrowRight size={16} />
+          </Link>
+        </div>
+      </section>
+
+      {/*continuacion */}
+      <section className="mx-auto w-full max-w-content px-6 pb-20 sm:px-10 sm:pb-28 lg:px-14 lg:pb-36">
+        <div className="mb-10 flex flex-col gap-4 sm:mb-14 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <span className="font-mono text-xs font-semibold uppercase tracking-widest text-rust">
+              Continuación
+            </span>
+            <h2 className="font-grotesk text-[32px] uppercase leading-tight text-dark sm:text-[44px] lg:text-[52px]">
+              Un poco de lo que hicimos después!
+            </h2>
+          </div>
+          <Link
+            to="/continuacion"
+            className="inline-flex shrink-0 items-center gap-2 font-mono text-sm font-semibold uppercase tracking-wide text-rust transition-colors hover:text-sage"
+          >
+            Ver galería completa
+            <ArrowRight size={16} />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+          {continuacionImages.map((src, i) => (
+            <Link
+              key={src}
+              to="/continuacion"
+              className={`stitch-card group relative overflow-hidden rounded-[24px] p-[18px] bg-transparent cursor-pointer ${ROTATIONS[i % ROTATIONS.length]}`}
+            >
+              <div className="relative overflow-hidden rounded-[16px] bg-tan/50">
+                <img
+                  src={src}
+                  loading="lazy"
+                  alt={`Foto destacada ${i + 1}`}
+                  className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        <div className="mt-12 text-center sm:hidden">
+          <Link
+            to="/continuacion"
             className="inline-flex items-center gap-2 rounded-full bg-rust px-7 py-3 font-mono text-sm font-semibold uppercase tracking-wide text-background shadow-md transition-colors hover:bg-sage"
           >
             Ver galería completa
