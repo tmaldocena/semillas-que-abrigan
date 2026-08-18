@@ -186,6 +186,15 @@ function GalleryStage({ onSelect }: { onSelect: (i: number) => void }) {
     startTx: 0,
     startTy: 0,
   })
+  // trackea cada dedo activo por pointerId, para poder detectar pinch (2 dedos)
+  const pointers = useRef<Map<number, { x: number; y: number }>>(new Map())
+  const pinch = useRef({
+    active: false,
+    startDist: 0,
+    startScale: 1,
+    anchorCanvasX: 0,
+    anchorCanvasY: 0,
+  })
 
   const [visible, setVisible] = useState<Set<number>>(new Set())
   const lastVisUpdate = useRef(0)
@@ -246,7 +255,37 @@ function GalleryStage({ onSelect }: { onSelect: (i: number) => void }) {
     return () => window.removeEventListener('resize', fitToView)
   }, [fitToView])
 
+  const beginPinch = (vp: HTMLDivElement) => {
+    const pts = [...pointers.current.values()]
+    if (pts.length < 2) return
+    const [p1, p2] = pts
+    const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y)
+    const midX = (p1.x + p2.x) / 2
+    const midY = (p1.y + p2.y) / 2
+    const rect = vp.getBoundingClientRect()
+    const localMidX = midX - rect.left
+    const localMidY = midY - rect.top
+    pinch.current = {
+      active: true,
+      startDist: dist || 1,
+      startScale: view.current.scale,
+      anchorCanvasX: (localMidX - view.current.tx) / view.current.scale,
+      anchorCanvasY: (localMidY - view.current.ty) / view.current.scale,
+    }
+    drag.current.active = false
+  }
+
   const onPointerDown = (e: React.PointerEvent) => {
+    const vp = viewportRef.current
+    if (!vp) return
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+    if (pointers.current.size >= 2) {
+      beginPinch(vp)
+      return
+    }
+
     drag.current = {
       active: true,
       moved: false,
@@ -255,10 +294,39 @@ function GalleryStage({ onSelect }: { onSelect: (i: number) => void }) {
       startTx: view.current.tx,
       startTy: view.current.ty,
     }
-    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
   }
 
   const onPointerMove = (e: React.PointerEvent) => {
+    const vp = viewportRef.current
+    if (!vp) return
+
+    if (pointers.current.has(e.pointerId)) {
+      pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    }
+
+    if (pinch.current.active && pointers.current.size >= 2) {
+      const [p1, p2] = [...pointers.current.values()]
+      const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y)
+      const midX = (p1.x + p2.x) / 2
+      const midY = (p1.y + p2.y) / 2
+      const rect = vp.getBoundingClientRect()
+      const localMidX = midX - rect.left
+      const localMidY = midY - rect.top
+      const ratio = dist / pinch.current.startDist
+      const nextScale = Math.min(2, Math.max(0.25, pinch.current.startScale * ratio))
+      view.current.scale = nextScale
+      view.current.tx = localMidX - pinch.current.anchorCanvasX * nextScale
+      view.current.ty = localMidY - pinch.current.anchorCanvasY * nextScale
+      applyTransform()
+
+      const now = performance.now()
+      if (now - lastVisUpdate.current > 120) {
+        lastVisUpdate.current = now
+        computeVisible()
+      }
+      return
+    }
+
     if (!drag.current.active) return
     const dx = e.clientX - drag.current.startX
     const dy = e.clientY - drag.current.startY
@@ -275,7 +343,32 @@ function GalleryStage({ onSelect }: { onSelect: (i: number) => void }) {
     }
   }
 
-  const onPointerUp = () => {
+  const onPointerUp = (e: React.PointerEvent) => {
+    pointers.current.delete(e.pointerId)
+
+    if (pointers.current.size >= 2) {
+      // sigue habiendo pinch con los dedos restantes: recalibrar sin salto
+      const vp = viewportRef.current
+      if (vp) beginPinch(vp)
+      return
+    }
+
+    if (pinch.current.active && pointers.current.size === 1) {
+      // quedó un solo dedo tras un pinch: retomar el pan desde ahí sin saltos
+      pinch.current.active = false
+      const [remaining] = [...pointers.current.values()]
+      drag.current = {
+        active: true,
+        moved: true,
+        startX: remaining.x,
+        startY: remaining.y,
+        startTx: view.current.tx,
+        startTy: view.current.ty,
+      }
+      return
+    }
+
+    pinch.current.active = false
     drag.current.active = false
     computeVisible()
   }
@@ -325,7 +418,7 @@ function GalleryStage({ onSelect }: { onSelect: (i: number) => void }) {
   }
 
   return (
-    <div className="relative h-[520px] w-full overflow-hidden rounded-[32px] border border-dark/10 bg-tan/20 sm:h-[600px] lg:h-[680px]">
+    <div className="relative h-[420px] w-full overflow-hidden rounded-[32px] border border-dark/10 bg-tan/20 sm:h-[520px] lg:h-[680px]">
       <div
         ref={viewportRef}
         className="absolute inset-0 touch-none cursor-grab active:cursor-grabbing"
@@ -393,7 +486,7 @@ function GalleryStage({ onSelect }: { onSelect: (i: number) => void }) {
       </div>
 
       <div className="absolute bottom-4 right-4 z-10 rounded-full bg-dark/80 px-3 py-1.5 font-mono text-xs text-background">
-        {images.length} fotos · arrastrá para explorar
+        {images.length} fotos · arrastrá / pellizcá para explorar
       </div>
     </div>
   )
@@ -402,20 +495,11 @@ function GalleryStage({ onSelect }: { onSelect: (i: number) => void }) {
 export default function Gallery() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [showScrollTop, setShowScrollTop] = useState(false)
-  const [isCompact, setIsCompact] = useState(false)
 
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 400)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 640px)')
-    const update = () => setIsCompact(mq.matches)
-    update()
-    mq.addEventListener('change', update)
-    return () => mq.removeEventListener('change', update)
   }, [])
 
   const close = useCallback(() => setSelectedIndex(null), [])
@@ -442,28 +526,7 @@ export default function Gallery() {
         </p>
       </div>
 
-      {isCompact ? (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {images.map((src, i) => (
-            <button
-              key={src}
-              onClick={() => setSelectedIndex(i)}
-              className={`stitch-card group relative overflow-hidden rounded-[24px] bg-transparent p-[18px] cursor-pointer ${ROTATIONS[i % ROTATIONS.length]}`}
-            >
-              <div className="relative overflow-hidden rounded-[16px] bg-tan/50">
-                <img
-                  src={src}
-                  loading="lazy"
-                  alt={`Foto del proyecto ${i + 1}`}
-                  className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-              </div>
-            </button>
-          ))}
-        </div>
-      ) : (
-        <GalleryStage onSelect={setSelectedIndex} />
-      )}
+      <GalleryStage onSelect={setSelectedIndex} />
 
       {selectedIndex !== null && (
         <Lightbox
